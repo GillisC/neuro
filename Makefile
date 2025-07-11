@@ -52,9 +52,12 @@ cuda:
 openblas:
 	@$(MAKE) BACKEND=openblas build
 
-build:
+config:
 	@mkdir -p $(BUILD_DIR)
-	@cmake -S . -B $(BUILD_DIR) -DBACKEND=$(BACKEND) && cmake --build $(BUILD_DIR) -- -j$(NUM_CORES)
+	@cmake -S . -B $(BUILD_DIR) -DBACKEND=$(BACKEND)
+
+build: config
+	@cmake --build $(BUILD_DIR) -- -j$(NUM_CORES)
 
 install:
 	@echo "Detected OS: $(OS)"
