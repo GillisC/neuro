@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.30)
-project(ModularML)
+project(neuro)
 
-set(PROJECT_NAME "modularml")
+set(PROJECT_NAME "neuro")
 
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 message(STATUS "CMake generator: ${CMAKE_GENERATOR}")
@@ -40,7 +40,7 @@ endif()
 option(ALIGN_TENSORS "Enable alignment for tensor data for better performance" ON)
 
 # Force memory alignment for AVX2 and AVX512
-if (NOT ALIGN_TENSORS AND (BUILD STREQUAL "avx" OR BUILD STREQUAL "avx512"))
+if (NOT ALIGN_TENSORS AND (BUILD STREQUAL "avx2" OR BUILD STREQUAL "avx512"))
     set(ALIGN_TENSORS ON)
     message(STATUS "Forced memory alignment")   
 endif()
@@ -50,7 +50,7 @@ if (ALIGN_TENSORS)
     add_definitions(-DALIGN_TENSORS)
     if (BUILD STREQUAL "blocked")
         add_definitions(-DMEMORY_ALIGNMENT=32)
-    elseif(BUILD STREQUAL "avx")
+    elseif(BUILD STREQUAL "avx2")
         set(ALIGN_TENSORS ON)
         add_definitions(-DMEMORY_ALIGNMENT=32)
     elseif(BUILD STREQUAL "avx512")
@@ -112,13 +112,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 # ------------------- Source files ------------------------- #
 
-set(BUILD "default" CACHE STRING "Source variant to build")
+set(BACKEND "default" CACHE STRING "Source variant to build")
 
 # Define source and include paths
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(BASE_DIR "${SRC_DIR}/default")
-set(VAR_DIR "${SRC_DIR}/${BUILD}")
+set(VAR_DIR "${SRC_DIR}/${BACKEND}")
 set(MAIN_FILE "${SRC_DIR}/main.cpp")
 
 # include the headers
@@ -160,7 +160,7 @@ foreach(REL_PATH IN LISTS DEFAULT_SOURCES)
 endforeach()
 
 # Show the final list of source files (for debugging)
-message(STATUS "Compiling with variant: ${BUILD}")
+message(STATUS "Compiling with variant: ${BACKEND}")
 foreach(SOURCE_FILE IN LISTS SOURCES)
     message(STATUS "  -> ${SOURCE_FILE}")
 endforeach()
