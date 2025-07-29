@@ -3,6 +3,19 @@ BUILD_DIR := build
 CMAKE := $(shell which cmake)
 OS := $(shell uname -s)
 
+BACKEND := default
+
+# ========== Build cores ============
+NUM_CORES := 1
+
+ifeq ($(OS), Linux)
+	NUM_CORES := $(shell expr `nproc` - 1)
+endif
+
+ifeq ($(OS), Darwin) # MacOS
+	NUM_CORES := $(shell sysctl -n hw.ncpu)
+endif
+
 # Detect which os the user has and set the package manager and dependencies accordingly
 # There are slight variations in the dependencies between operating systems.
 ifeq ($(OS), Linux)
@@ -15,11 +28,36 @@ ifeq ($(OS), Darwin) # MacOS
 	DEPENDENCIES := cmake g++ make graphviz gcovr doxygen include-what-you-use
 endif
 
-# Leaving this here to not break github actions
-all:
-	@echo "Configuring the project with default GEMM implementation..."
-	@$(CMAKE) -S . -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=Debug -DUSE_DEFAULT_GEMM=ON -DUSE_BLOCKED_GEMM=OFF -DUSE_AVX_GEMM=OFF -DUSE_AVX512_GEMM=OFF
-	@$(CMAKE) --build $(BUILD_DIR) --parallel 8
+# =========== Build Targets ================
+.PHONY: all build default blocked avx2 avx512 cuda openblas
+
+all: $(BACKEND)
+
+
+default:
+	@$(MAKE) BACKEND=default build
+
+blocked:
+	@$(MAKE) BACKEND=blocked build
+
+avx2:
+	@$(MAKE) BACKEND=avx2 build
+
+avx512:
+	@$(MAKE) BACKEND=avx512 build
+
+cuda: 
+	@$(MAKE) BACKEND=cuda build
+
+openblas:
+	@$(MAKE) BACKEND=openblas build
+
+config:
+	@mkdir -p $(BUILD_DIR)
+	@cmake -S . -B $(BUILD_DIR) -DBACKEND=$(BACKEND)
+
+build: config
+	@cmake --build $(BUILD_DIR) -- -j$(NUM_CORES)
 
 install:
 	@echo "Detected OS: $(OS)"
@@ -28,9 +66,6 @@ install:
 	@pip install -r requirements.txt
 	@echo "Installation complete!"
 
-run:
-	@echo "Running main program...\n"
-	@cd ./build/bin && ./modularml
 
 # Leaving this here to not break github actions
 test:
@@ -65,7 +100,6 @@ check_backends:
 	else \
 		echo "AVX-512: Not available!"; \
 	fi
-
 
 clean:
 	@echo "Cleaning up...\n"
